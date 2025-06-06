@@ -1,0 +1,129 @@
+services:
+  # -------------------------------
+  # 1. Keycloak (Authorization Server)
+  # -------------------------------
+  keycloak:
+    image: quay.io/keycloak/keycloak:21.1.1
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    command:
+      - start-dev
+      - "--import-realm"  # Dodaj tę flagę
+      - "--hostname-strict=false"
+      - "--http-relative-path=/auth"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    ports:
+      - "8080:8080"
+    networks:
+      - notes-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/auth/realms/notes-realm || exit 1"]  # Uproszczony healthcheck
+      interval: 5s
+      timeout: 2s
+      retries: 12
+      start_period: 30s  # Zwiększ start_period
+  # -------------------------------
+  # 2. PostgreSQL (baza danych)
+  # -------------------------------
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=notes_user
+      - POSTGRES_PASSWORD=notes_pass
+      - POSTGRES_DB=notesdb
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - notes-network
+  
+  # -------------------------------
+  # 3. Backend/API (Python, FastAPI)
+  # -------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      # Adresy do Bazy i Keycloak
+      - DATABASE_URL=postgresql://notes_user:notes_pass@db:5432/notesdb
+      - KEYCLOAK_JWKS_URL=http://keycloak:8080/auth/realms/notes-realm/protocol/openid-connect/certs
+      - KEYCLOAK_ISSUER=http://localhost:8080/auth/realms/notes-realm
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - keycloak
+    networks:
+      - notes-network
+
+  # -------------------------------
+  # 4. Frontend SPA (React)
+  # -------------------------------
+  frontend-spa:
+    build:
+      context: ./frontend-spa
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_KEYCLOAK_URL: "http://keycloak:8080/auth"
+        REACT_APP_REALM: "notes-realm"
+        REACT_APP_CLIENT_ID: "notes-spa"
+        REACT_APP_API_URL: "http://backend:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - keycloak
+      - backend
+    networks:
+      - notes-network
+  # -------------------------------
+  # 5. Frontend SSR (Next.js)
+  # -------------------------------
+  frontend-ssr:
+    build:
+      context: ./frontend-ssr
+      dockerfile: Dockerfile
+    environment:
+      - KEYCLOAK_URL=http://keycloak:8080/auth
+      - REALM=notes-realm
+      - CLIENT_ID=notes-ssr
+      - CLIENT_SECRET=change_this_sooner # zgodnie z Keycloak
+      - API_URL=http://backend:8000
+    ports:
+      - "3001:3001"
+    depends_on:
+      - keycloak
+      - backend
+    networks:
+      - notes-network
+
+  # -------------------------------
+  # 6. Backend-to-Backend (Node.js)
+  # -------------------------------
+  backend-b2b:
+    build:
+      context: ./backend-b2b
+      dockerfile: Dockerfile
+    environment:
+      - KEYCLOAK_URL=http://keycloak:8080/auth
+      - REALM=notes-realm
+      - CLIENT_ID=notes-backend
+      - CLIENT_SECRET=another_secret_here
+      - API_URL=http://backend:8000
+    depends_on:
+      - keycloak
+      - backend
+    networks:
+      - notes-network
+
+networks:
+  notes-network:
+    driver: bridge
+
+volumes:
+  db_data:

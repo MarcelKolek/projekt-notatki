@@ -1,0 +1,101 @@
+{
+    "id": "notes-realm",
+    "realm": "notes-realm",
+    "enabled": true,
+    "roles": {
+      "realm": [
+        {
+          "name": "USER"
+        },
+        {
+          "name": "ADMIN"
+        },
+        {
+          "name": "SERVER"
+        }
+      ]
+    },
+    "clients": [
+      {
+        "clientId": "notes-spa",
+        "enabled": true,
+        "publicClient": true,
+        "redirectUris": ["http://localhost:3000/*"],
+        "protocol": "openid-connect",
+        "standardFlowEnabled": true,
+        "implicitFlowEnabled": false,
+        "directAccessGrantsEnabled": false,
+        "authorizationServicesEnabled": false,
+        "serviceAccountsEnabled": false,
+        "attributes": {
+          "pkce.code.challenge.method": "S256"
+        },
+        "webOrigins": ["http://localhost:3000"]
+      },
+      {
+        "clientId": "notes-ssr",
+        "enabled": true,
+        "publicClient": false,
+        "secret": "change_this_sooner",
+        "redirectUris": ["http://localhost:3001/*"],
+        "protocol": "openid-connect",
+        "standardFlowEnabled": true,
+        "directAccessGrantsEnabled": false,
+        "serviceAccountsEnabled": false
+      },
+      {
+        "clientId": "notes-backend",
+        "enabled": true,
+        "publicClient": false,
+        "secret": "another_secret_here",
+        "redirectUris": [],
+        "protocol": "openid-connect",
+        "standardFlowEnabled": false,
+        "implicitFlowEnabled": false,
+        "directAccessGrantsEnabled": false,
+        "serviceAccountsEnabled": true,
+        "authorizationServicesEnabled": false
+      }
+    ],
+    "users": [
+      {
+        "username": "alice",
+        "enabled": true,
+        "credentials": [
+          {
+            "type": "password",
+            "value": "alice123",
+            "temporary": false
+          }
+        ],
+        "realmRoles": ["USER"]
+      },
+      {
+        "username": "bob",
+        "enabled": true,
+        "credentials": [
+          {
+            "type": "password",
+            "value": "bob123",
+            "temporary": false
+          }
+        ],
+        "realmRoles": ["ADMIN"]
+      }
+    ],
+    "scopeMappings": [
+        {
+            "client": "notes-spa",
+            "roles": ["USER", "ADMIN"]
+        },
+        {
+            "client": "notes-ssr",
+            "roles": ["USER", "ADMIN"]
+        },
+        {
+            "client": "notes-backend",
+            "roles": ["SERVER"]
+        }
+    ]
+  }
+  
