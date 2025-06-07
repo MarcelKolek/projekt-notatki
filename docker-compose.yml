@@ -1,7 +1,4 @@
 services:
-  # -------------------------------
-  # 1. Keycloak (Authorization Server)
-  # -------------------------------
   keycloak:
     image: quay.io/keycloak/keycloak:21.1.1
     environment:
@@ -9,11 +6,12 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=admin
     command:
       - start-dev
-      - "--import-realm"  # Dodaj tę flagę
+      - "--import-realm"
       - "--hostname-strict=false"
       - "--http-relative-path=/auth"
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - keycloak_data:/opt/keycloak/data
     ports:
       - "8080:8080"
     networks:
@@ -23,10 +21,7 @@ services:
       interval: 5s
       timeout: 2s
       retries: 12
-      start_period: 30s  # Zwiększ start_period
-  # -------------------------------
-  # 2. PostgreSQL (baza danych)
-  # -------------------------------
+      start_period: 30s 
   db:
     image: postgres:15
     environment:
@@ -39,15 +34,11 @@ services:
     networks:
       - notes-network
   
-  # -------------------------------
-  # 3. Backend/API (Python, FastAPI)
-  # -------------------------------
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      # Adresy do Bazy i Keycloak
       - DATABASE_URL=postgresql://notes_user:notes_pass@db:5432/notesdb
       - KEYCLOAK_JWKS_URL=http://keycloak:8080/auth/realms/notes-realm/protocol/openid-connect/certs
       - KEYCLOAK_ISSUER=http://localhost:8080/auth/realms/notes-realm
@@ -59,15 +50,12 @@ services:
     networks:
       - notes-network
 
-  # -------------------------------
-  # 4. Frontend SPA (React)
-  # -------------------------------
   frontend-spa:
     build:
       context: ./frontend-spa
       dockerfile: Dockerfile
       args:
-        REACT_APP_KEYCLOAK_URL: "http://keycloak:8080/auth"
+        REACT_APP_KEYCLOAK_URL: "http://localhost:8080/auth"
         REACT_APP_REALM: "notes-realm"
         REACT_APP_CLIENT_ID: "notes-spa"
         REACT_APP_API_URL: "http://backend:8000"
@@ -81,9 +69,7 @@ services:
       - backend
     networks:
       - notes-network
-  # -------------------------------
-  # 5. Frontend SSR (Next.js)
-  # -------------------------------
+
   frontend-ssr:
     build:
       context: ./frontend-ssr
@@ -101,9 +87,6 @@ services:
     networks:
       - notes-network
 
-  # -------------------------------
-  # 6. Backend-to-Backend (Node.js)
-  # -------------------------------
   backend-b2b:
     build:
       context: ./backend-b2b
@@ -126,3 +109,4 @@ networks:
 
 volumes:
   db_data:
+  keycloak_data:

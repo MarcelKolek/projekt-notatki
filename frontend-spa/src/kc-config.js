@@ -1,5 +1,5 @@
 export const kcConfig = {
-    url: "http://localhost:8080/auth",  // upewnij się, że to dokładnie adres Keycloak-a
-    realm: "notes-realm",               // nazwa realm w Keycloak
-    clientId: "notes-spa",              // clientId w Keycloak → Clients
+  url: process.env.REACT_APP_KEYCLOAK_URL,
+  realm: process.env.REACT_APP_REALM,
+  clientId: process.env.REACT_APP_CLIENT_ID,
 };
