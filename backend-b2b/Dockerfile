@@ -7,8 +7,6 @@ RUN npm ci
 
 COPY . .
 
-
-
 ENV PORT 3002
 EXPOSE 3002
 

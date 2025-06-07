@@ -1,4 +1,3 @@
-// pages/_app.js
 import { useState, useEffect } from 'react'
 import { initKeycloak } from '../utils/keycloak'
 

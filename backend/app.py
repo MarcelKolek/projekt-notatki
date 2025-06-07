@@ -3,7 +3,6 @@ from fastapi import FastAPI, Depends, HTTPException, status, Path
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from jose import jwt, jwk, JWTError
-from jose.utils import base64url_decode
 import requests
 from typing import List
 from pydantic import BaseModel
@@ -15,21 +14,16 @@ from sqlalchemy.orm import sessionmaker
 import time
 import uuid
 
-# --------------------------------------------------------------------
-# Konfiguracja
-# --------------------------------------------------------------------
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://notes_user:notes_pass@db:5432/notesdb")
 KEYCLOAK_JWKS_URL = os.getenv("KEYCLOAK_JWKS_URL")
 KEYCLOAK_ISSUERS = os.getenv("KEYCLOAK_ISSUERS", "http://localhost:8080/auth/realms/notes-realm").split(",")
 KEYCLOAK_ISSUERS = [iss.strip() for iss in KEYCLOAK_ISSUERS if iss.strip()]
 ALGORITHMS = ["RS256"]
 
-# SQLAlchemy
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# Pydantic Schemas
 class NoteCreate(BaseModel):
     title: str
     content: str
@@ -40,7 +34,6 @@ class NoteOut(BaseModel):
     content: str
     owner_id: str
 
-# Model SQLAlchemy
 class Note(Base):
     __tablename__ = "notes"
     id = Column(PGUUID(as_uuid=True), primary_key=True)
@@ -50,7 +43,6 @@ class Note(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# Inicjalizacja FastAPI
 app = FastAPI()
 
 origins = [
@@ -66,24 +58,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Bearer Token
 bearer_scheme = HTTPBearer()
 jwks = None
 
 @app.on_event("startup")
 def retrieve_jwks_with_retry():
     global jwks
-    # Spróbujmy pobrać JWKS, aż Keycloak w końcu wystartuje
     while True:
         try:
             resp = requests.get(KEYCLOAK_JWKS_URL, timeout=5)
             resp.raise_for_status()
             jwks = resp.json()
-            print("✅ JWKS pobrane z Keycloak.")
-            print("ISSUERS:", KEYCLOAK_ISSUERS)
+            print("JWKS pobrane z Keycloak.")
             break
         except Exception as e:
-            print(f"❌ Nie można pobrać JWKS z Keycloak ({e}). Ponawiam za 5 sekund…")
+            print(f"Nie można pobrać JWKS z Keycloak. Ponawiam za 5 sekund…")
             time.sleep(5)
 
 def verify_token(token: str):
@@ -93,11 +82,10 @@ def verify_token(token: str):
             detail="Serwer nie jest gotowy do weryfikacji tokenów"
         )
 
-    # 1. Rozkoduj nagłówek JWT, aby odczytać 'kid'
     try:
         unverified_header = jwt.get_unverified_header(token)
     except JWTError as e:
-        print("❌ Niepoprawny nagłówek JWT:", e)
+        print("Niepoprawny nagłówek JWT:", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Nieprawidłowy nagłówek tokena"
@@ -105,13 +93,12 @@ def verify_token(token: str):
 
     kid = unverified_header.get("kid")
     if not kid:
-        print("❌ Brak pola 'kid' w nagłówku JWT")
+        print("Brak pola 'kid' w nagłówku JWT")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Brak identyfikatora klucza (kid) w tokenie"
         )
 
-    # 2. Znajdź w jwks["keys"] JWK, który ma ten sam 'kid'
     key_dict = None
     for key in jwks.get("keys", []):
         if key.get("kid") == kid:
@@ -119,31 +106,14 @@ def verify_token(token: str):
             break
 
     if key_dict is None:
-        print(f"❌ Nie znaleziono JWK o kid = {kid} w zestawie JWKS")
+        print(f"Nie znaleziono JWK o kid = {kid} w zestawie JWKS")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Nieznany klucz JWT"
         )
 
-    # 3. Zbuduj obiekt publicznego klucza na podstawie JWK
     public_key = jwk.construct(key_dict)
 
-    # (opcjonalnie) ręczna weryfikacja podpisu, żeby szybciej wychwycić błędy
-    try:
-        message_part, encoded_sig = token.rsplit('.', 1)
-        decoded_sig = base64url_decode(encoded_sig.encode())
-        if not public_key.verify(message_part.encode(), decoded_sig):
-            print("❌ Podpis JWT niezgodny z JWK")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Niepoprawny podpis tokena"
-            )
-    except Exception:
-        # Jeśli cokolwiek pójdzie nie tak przy rzeźbieniu ciągu, nadal spróbujemy decode’a,
-        # bo jwt.decode da bardziej precyzyjny błąd (np. expired, issuer mismatch itp.).
-        pass
-
-    # 4. Dekoduj payload podając już konkretny klucz publiczny
     try:
         public_pem = public_key.to_pem().decode("utf-8")
         payload = jwt.decode(
@@ -155,7 +125,7 @@ def verify_token(token: str):
         )
         return payload
     except JWTError as e:
-        print("❌ Błąd dekodowania JWT (payload):", e)
+        print("Błąd dekodowania JWT (payload):", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Nieprawidłowy lub wygasły token"
@@ -164,7 +134,6 @@ def verify_token(token: str):
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     token = credentials.credentials
     payload = verify_token(token)
-    # Kluczowe fieldy: sub, preferred_username, realm_access.roles
     user_id = payload.get("sub")
     roles = payload.get("realm_access", {}).get("roles", [])
     if user_id is None:
@@ -174,15 +143,11 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_
 def is_admin(roles: List[str]) -> bool:
     return "ADMIN" in roles
 
-# --------------------------------------------------------------------
-# Endpoints CRUD
-# --------------------------------------------------------------------
-
 @app.post("/notes", response_model=NoteOut)
 def create_note(note_in: NoteCreate, user=Depends(get_current_user)):
     db = SessionLocal()
     new_note = Note(
-        id=uuid.uuid4(),                   # ← teraz generujemy UUID w Pythonie
+        id=uuid.uuid4(),
         title=note_in.title,
         content=note_in.content,
         owner_id=user["sub"]

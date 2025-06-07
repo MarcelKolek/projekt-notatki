@@ -10,8 +10,8 @@ const keycloak = new Keycloak(kcConfig);
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
   const [notes, setNotes] = useState([]);
-  const [roles, setRoles] = useState([]); // store roles
-  const [notesCount, setNotesCount] = useState(null); // store count for admin
+  const [roles, setRoles] = useState([]);
+  const [notesCount, setNotesCount] = useState(null);
 
   useEffect(() => {
     keycloak
@@ -24,7 +24,6 @@ function App() {
         if (auth) {
           setAuthenticated(true);
 
-          // Get user roles from Keycloak token (realm roles)
           const tokenParsed = keycloak.tokenParsed;
           const userRoles =
             tokenParsed &&
@@ -45,7 +44,6 @@ function App() {
       .catch((err) => {
         console.error("Keycloak init error:", err);
       });
-    // eslint-disable-next-line
   }, []);
 
   const fetchNotes = () => {
@@ -68,7 +66,6 @@ function App() {
       });
   };
 
-  // --- NEW FUNCTION: fetch notes count for admins ---
   const fetchNotesCount = () => {
     keycloak
       .updateToken(30)
@@ -101,7 +98,7 @@ function App() {
           )
           .then(() => {
             fetchNotes();
-            if (roles.includes("ADMIN")) fetchNotesCount(); // update count if admin
+            if (roles.includes("ADMIN")) fetchNotesCount();
           })
           .catch((err) => {
             console.error("Błąd tworzenia notatki:", err);
@@ -122,7 +119,7 @@ function App() {
           })
           .then(() => {
             fetchNotes();
-            if (roles.includes("ADMIN")) fetchNotesCount(); // update count if admin
+            if (roles.includes("ADMIN")) fetchNotesCount();
           })
           .catch((err) => {
             console.error("Błąd usuwania notatki:", err);

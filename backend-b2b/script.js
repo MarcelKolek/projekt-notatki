@@ -4,12 +4,11 @@ const cron = require("node-cron");
 const fs = require("fs");
 const path = require("path");
 
-// Create logs directory if it doesn't exist
 const LOG_DIR = path.join(__dirname, "logs");
 if (!fs.existsSync(LOG_DIR)) {
   fs.mkdirSync(LOG_DIR, { recursive: true });
 }
-const LOG_FILE = path.join(LOG_DIR, "logs.txt"); // Now stored in logs/logs.txt
+const LOG_FILE = path.join(LOG_DIR, "logs.txt");
 
 const KEYCLOAK_URL = process.env.KEYCLOAK_URL;
 const REALM = process.env.REALM;
@@ -79,16 +78,12 @@ app.post("/run-now", async (req, res) => {
   res.send({ status: "started" });
 });
 
-// Start server
 app.listen(PORT, () => {
   log(`[INFO] Serwer uruchomiony na porcie ${PORT}`);
 });
 
-// === Cron ===
 cron.schedule("*/3 * * * *", () => {
-  log("🔁 Uruchomienie zadania cron: fetchAllNotes");
   fetchAllNotes();
 });
 
-// Initial run
 fetchAllNotes();

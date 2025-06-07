@@ -1,16 +1,13 @@
-// src/components/NotesList.jsx
 import React, { useState } from "react";
 
 export default function NotesList({ notes, onCreate, onDelete, onUpdate }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 
-  // Stany do edycji:
   const [editId, setEditId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
 
-  // Obsługa tworzenia nowej notatki
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
@@ -19,14 +16,12 @@ export default function NotesList({ notes, onCreate, onDelete, onUpdate }) {
     setContent("");
   };
 
-  // Rozpoczęcie edycji: wypełniamy pola danymi wybranej notatki
   const startEdit = (note) => {
     setEditId(note.id);
     setEditTitle(note.title);
     setEditContent(note.content);
   };
 
-  // Zapisanie zmian po edycji
   const handleEdit = (e) => {
     e.preventDefault();
     onUpdate(editId, editTitle.trim(), editContent.trim());
@@ -37,7 +32,6 @@ export default function NotesList({ notes, onCreate, onDelete, onUpdate }) {
 
   return (
     <div>
-      {/* Formularz dodawania nowej notatki */}
       <h2>Dodaj nową notatkę</h2>
       <form onSubmit={handleSubmit} style={{ marginBottom: "30px" }}>
         <input
@@ -71,7 +65,6 @@ export default function NotesList({ notes, onCreate, onDelete, onUpdate }) {
         </button>
       </form>
 
-      {/* Lista notatek */}
       <h2>Lista notatek</h2>
       {notes.length === 0 && <div>Brak notatek</div>}
       <ul style={{ listStyle: "none", padding: 0 }}>
@@ -86,7 +79,6 @@ export default function NotesList({ notes, onCreate, onDelete, onUpdate }) {
             }}
           >
             {editId === note.id ? (
-              // Ekran edycji
               <form onSubmit={handleEdit}>
                 <input
                   type="text"
@@ -124,7 +116,6 @@ export default function NotesList({ notes, onCreate, onDelete, onUpdate }) {
                 </button>
               </form>
             ) : (
-              // Ekran podglądu notatki
               <div>
                 <strong>{note.title}</strong>{" "}
                 <span style={{ color: "#666", fontSize: "0.9em" }}>
