@@ -1,5 +1,3 @@
-// frontend-spa/src/index.js
-
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import Keycloak from "keycloak-js";
@@ -7,12 +5,13 @@ import axios from "axios";
 import NotesList from "./components/NotesList";
 import { kcConfig } from "./kc-config";
 
-// Tworzymy instancję Keycloak (z konfiguracją z pliku kc-config.js)
 const keycloak = new Keycloak(kcConfig);
 
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
   const [notes, setNotes] = useState([]);
+  const [roles, setRoles] = useState([]); // store roles
+  const [notesCount, setNotesCount] = useState(null); // store count for admin
 
   useEffect(() => {
     keycloak
@@ -24,7 +23,21 @@ function App() {
       .then((auth) => {
         if (auth) {
           setAuthenticated(true);
+
+          // Get user roles from Keycloak token (realm roles)
+          const tokenParsed = keycloak.tokenParsed;
+          const userRoles =
+            tokenParsed &&
+            tokenParsed.realm_access &&
+            tokenParsed.realm_access.roles
+              ? tokenParsed.realm_access.roles
+              : [];
+          setRoles(userRoles);
+
           fetchNotes();
+          if (userRoles.includes("ADMIN")) {
+            fetchNotesCount();
+          }
         } else {
           console.error("Keycloak: nie udało się zalogować");
         }
@@ -32,6 +45,7 @@ function App() {
       .catch((err) => {
         console.error("Keycloak init error:", err);
       });
+    // eslint-disable-next-line
   }, []);
 
   const fetchNotes = () => {
@@ -54,6 +68,27 @@ function App() {
       });
   };
 
+  // --- NEW FUNCTION: fetch notes count for admins ---
+  const fetchNotesCount = () => {
+    keycloak
+      .updateToken(30)
+      .then(() => {
+        axios
+          .get("http://localhost:8000/notes/count", {
+            headers: { Authorization: `Bearer ${keycloak.token}` },
+          })
+          .then((res) => {
+            setNotesCount(res.data.count);
+          })
+          .catch((err) => {
+            console.error("Błąd pobierania liczby notatek:", err);
+          });
+      })
+      .catch((err) => {
+        console.error("Nie udało się odświeżyć tokena (count):", err);
+      });
+  };
+
   const createNote = (title, content) => {
     keycloak
       .updateToken(30)
@@ -66,6 +101,7 @@ function App() {
           )
           .then(() => {
             fetchNotes();
+            if (roles.includes("ADMIN")) fetchNotesCount(); // update count if admin
           })
           .catch((err) => {
             console.error("Błąd tworzenia notatki:", err);
@@ -86,6 +122,7 @@ function App() {
           })
           .then(() => {
             fetchNotes();
+            if (roles.includes("ADMIN")) fetchNotesCount(); // update count if admin
           })
           .catch((err) => {
             console.error("Błąd usuwania notatki:", err);
@@ -125,6 +162,11 @@ function App() {
   return (
     <div style={{ maxWidth: "800px", margin: "40px auto" }}>
       <h1>Twoje Notatki</h1>
+      {roles.includes("ADMIN") && notesCount !== null && (
+        <div style={{ marginBottom: "15px", color: "teal" }}>
+          <strong>Liczba wszystkich notatek w systemie: {notesCount}</strong>
+        </div>
+      )}
       <NotesList
         notes={notes}
         onCreate={createNote}

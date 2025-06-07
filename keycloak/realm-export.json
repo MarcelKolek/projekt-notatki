@@ -10,9 +10,6 @@
         },
         {
           "name": "ADMIN"
-        },
-        {
-          "name": "SERVER"
         }
       ]
     },
@@ -58,7 +55,7 @@
         "protocol": "openid-connect",
         "standardFlowEnabled": false,
         "implicitFlowEnabled": false,
-        "directAccessGrantsEnabled": false,
+        "directAccessGrantsEnabled": true,
         "serviceAccountsEnabled": true,
         "authorizationServicesEnabled": false
       }
@@ -100,8 +97,8 @@
         },
         {
             "client": "notes-backend",
-            "roles": ["SERVER"]
+            "roles": ["ADMIN"]
         }
     ]
-  }
+}
   

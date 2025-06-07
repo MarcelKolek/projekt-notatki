@@ -17,7 +17,7 @@ services:
     networks:
       - notes-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/auth/realms/notes-realm || exit 1"]  # Uproszczony healthcheck
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/auth/realms/notes-realm || exit 1"]
       interval: 5s
       timeout: 2s
       retries: 12
@@ -41,7 +41,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://notes_user:notes_pass@db:5432/notesdb
       - KEYCLOAK_JWKS_URL=http://keycloak:8080/auth/realms/notes-realm/protocol/openid-connect/certs
-      - KEYCLOAK_ISSUER=http://localhost:8080/auth/realms/notes-realm
+      - KEYCLOAK_ISSUERS=http://localhost:8080/auth/realms/notes-realm,http://keycloak:8080/auth/realms/notes-realm
     ports:
       - "8000:8000"
     depends_on:
@@ -101,7 +101,11 @@ services:
       - keycloak
       - backend
     networks:
-      - notes-network
+       - notes-network
+    ports:
+       - "3002:3002"
+    volumes:
+       - ./backend-b2b/logs:/app/logs
 
 networks:
   notes-network:

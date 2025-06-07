@@ -50,7 +50,7 @@ export default function Home({ keycloak }) {
       </ul>
 
       <button
-        style={{ marginTop: "20px", padding: "10px 20px", background: "#f44336", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
+        style={{ marginTop: "20px"}}
         onClick={handleLogout}
       >
         Wyloguj

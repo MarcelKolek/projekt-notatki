@@ -20,7 +20,8 @@ import uuid
 # --------------------------------------------------------------------
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://notes_user:notes_pass@db:5432/notesdb")
 KEYCLOAK_JWKS_URL = os.getenv("KEYCLOAK_JWKS_URL")
-KEYCLOAK_ISSUER = os.getenv("KEYCLOAK_ISSUER")
+KEYCLOAK_ISSUERS = os.getenv("KEYCLOAK_ISSUERS", "http://localhost:8080/auth/realms/notes-realm").split(",")
+KEYCLOAK_ISSUERS = [iss.strip() for iss in KEYCLOAK_ISSUERS if iss.strip()]
 ALGORITHMS = ["RS256"]
 
 # SQLAlchemy
@@ -79,7 +80,7 @@ def retrieve_jwks_with_retry():
             resp.raise_for_status()
             jwks = resp.json()
             print("✅ JWKS pobrane z Keycloak.")
-            print("ISSUER:", KEYCLOAK_ISSUER)
+            print("ISSUERS:", KEYCLOAK_ISSUERS)
             break
         except Exception as e:
             print(f"❌ Nie można pobrać JWKS z Keycloak ({e}). Ponawiam za 5 sekund…")
@@ -149,7 +150,7 @@ def verify_token(token: str):
             token,
             public_pem,
             algorithms=ALGORITHMS,
-            issuer=KEYCLOAK_ISSUER,
+            issuer=KEYCLOAK_ISSUERS,
             options={"verify_aud": False},
         )
         return payload
@@ -208,6 +209,13 @@ def get_notes(user=Depends(get_current_user)):
     db.close()
     return result
 
+@app.get("/notes/count")
+def count_notes(user=Depends(get_current_user)):
+    db = SessionLocal()
+    count = db.query(Note).count()
+    db.close()
+    return {"count": count}
+
 @app.get("/notes/{note_id}", response_model=NoteOut)
 def get_note(note_id: UUID = Path(...), user=Depends(get_current_user)):
     db = SessionLocal()
@@ -255,7 +263,6 @@ def delete_note(note_id: UUID, user=Depends(get_current_user)):
     db.close()
     return {"detail": "Notatka usunięta"}
 
-# Health-check lub root
 @app.get("/")
 def root():
     return {"msg": "Notes API is up"}

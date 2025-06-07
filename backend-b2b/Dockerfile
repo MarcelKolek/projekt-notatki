@@ -7,4 +7,9 @@ RUN npm ci
 
 COPY . .
 
-CMD ["npm", "start"]
+
+
+ENV PORT 3002
+EXPOSE 3002
+
+CMD ["node", "script.js"]
