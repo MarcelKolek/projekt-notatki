@@ -1,6 +1,7 @@
 {
     "id": "notes-realm",
     "realm": "notes-realm",
+    "registrationAllowed": true,
     "enabled": true,
     "roles": {
       "realm": [
@@ -35,13 +36,18 @@
       {
         "clientId": "notes-ssr",
         "enabled": true,
-        "publicClient": false,
+        "publicClient": true,
         "secret": "change_this_sooner",
         "redirectUris": ["http://localhost:3001/*"],
         "protocol": "openid-connect",
         "standardFlowEnabled": true,
         "directAccessGrantsEnabled": false,
-        "serviceAccountsEnabled": false
+        "implicitFlowEnabled": false,
+        "serviceAccountsEnabled": false,
+        "attributes": {
+            "pkce.code.challenge.method": "S256"
+        },
+        "webOrigins": ["http://localhost:3001"]
       },
       {
         "clientId": "notes-backend",

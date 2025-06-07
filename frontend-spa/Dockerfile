@@ -4,21 +4,20 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# 1. Instalujemy zależności (w tym react-scripts)
+# Krok 1: instalacja zależności
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# 2. Kopiujemy cały kod aplikacji
+# Krok 2: kopiujemy cały kod
 COPY . .
 
-# 3. Budujemy aplikację: teoretycznie "react-scripts build" stworzy folder "build"
-#    z plikami statycznymi (bundle.js, index.html, itp.)
+# Krok 3: budujemy aplikację (React -> static files)
 RUN npm run build
 
-# 4. Instalujemy "serve", by serwować zawartość folderu build
+# Krok 4: instalujemy "serve", aby serwować statyczną buildowaną wersję
 RUN npm install -g serve
 
 EXPOSE 3000
 
-# 5. Serwujemy produkcyjną wersję (build) na porcie 3000
+# Krok 5: uruchamiamy serwer plików statycznych
 CMD ["serve", "-s", "build", "-l", "3000"]

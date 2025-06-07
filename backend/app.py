@@ -79,6 +79,7 @@ def retrieve_jwks_with_retry():
             resp.raise_for_status()
             jwks = resp.json()
             print("✅ JWKS pobrane z Keycloak.")
+            print("ISSUER:", KEYCLOAK_ISSUER)
             break
         except Exception as e:
             print(f"❌ Nie można pobrać JWKS z Keycloak ({e}). Ponawiam za 5 sekund…")

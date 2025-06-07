@@ -89,11 +89,10 @@ services:
       context: ./frontend-ssr
       dockerfile: Dockerfile
     environment:
-      - KEYCLOAK_URL=http://keycloak:8080/auth
-      - REALM=notes-realm
-      - CLIENT_ID=notes-ssr
-      - CLIENT_SECRET=change_this_sooner # zgodnie z Keycloak
-      - API_URL=http://backend:8000
+      - NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8080/auth
+      - NEXT_PUBLIC_REALM=notes-realm
+      - NEXT_PUBLIC_CLIENT_ID=notes-ssr
+      - API_URL=http://localhost:8000
     ports:
       - "3001:3001"
     depends_on:
