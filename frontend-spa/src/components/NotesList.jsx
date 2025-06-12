@@ -32,105 +32,75 @@ export default function NotesList({ notes, onCreate, onDelete, onUpdate }) {
 
   return (
     <div>
-      <h2>Dodaj nową notatkę</h2>
-      <form onSubmit={handleSubmit} style={{ marginBottom: "30px" }}>
+      <h2 className="subtitle">Dodaj nową notatkę</h2>
+      <form onSubmit={handleSubmit} className="note-form">
         <input
           type="text"
+          className="input"
           placeholder="Tytuł"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
-          style={{
-            width: "100%",
-            padding: "8px",
-            marginBottom: "10px",
-            boxSizing: "border-box",
-          }}
         />
         <textarea
+          className="textarea"
           placeholder="Treść"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           required
-          style={{
-            width: "100%",
-            padding: "8px",
-            marginBottom: "10px",
-            boxSizing: "border-box",
-            minHeight: "80px",
-          }}
         />
-        <button type="submit" style={{ padding: "8px 16px" }}>
+        <button type="submit" className="btn btn-primary">
           Utwórz
         </button>
       </form>
 
-      <h2>Lista notatek</h2>
-      {notes.length === 0 && <div>Brak notatek</div>}
-      <ul style={{ listStyle: "none", padding: 0 }}>
-        {notes.map((note) => (
-          <li
-            key={note.id}
-            style={{
-              marginBottom: "20px",
-              padding: "15px",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-            }}
-          >
+      <h2 className="subtitle">Lista notatek</h2>
+      {notes.length === 0 && <div className="empty">Brak notatek</div>}
+      <ul className="notes-list">
+        {[...notes].reverse().map((note) => (
+          <li key={note.id} className="note-item">
             {editId === note.id ? (
-              <form onSubmit={handleEdit}>
+              <form onSubmit={handleEdit} className="edit-form">
                 <input
                   type="text"
+                  className="input"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                   required
-                  style={{
-                    width: "100%",
-                    padding: "6px",
-                    marginBottom: "8px",
-                    boxSizing: "border-box",
-                  }}
                 />
                 <textarea
+                  className="textarea"
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
                   required
-                  style={{
-                    width: "100%",
-                    padding: "6px",
-                    marginBottom: "8px",
-                    boxSizing: "border-box",
-                    minHeight: "60px",
-                  }}
                 />
-                <button type="submit" style={{ marginRight: "8px" }}>
+                <button type="submit" className="btn btn-primary">
                   Zapisz
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditId(null)}
-                  style={{ backgroundColor: "#eee" }}
+                  className="btn btn-secondary"
                 >
                   Anuluj
                 </button>
               </form>
             ) : (
-              <div>
-                <strong>{note.title}</strong>{" "}
-                <span style={{ color: "#666", fontSize: "0.9em" }}>
+              <div className="note-view">
+                <strong className="note-title">{note.title}</strong>{" "}
+                <span className="note-owner">
                   (właściciel: {note.ownerId || note.owner_id})
                 </span>
-                <p style={{ margin: "8px 0" }}>{note.content}</p>
+                <p className="note-content">{note.content}</p>
                 <button
                   onClick={() => startEdit(note)}
-                  style={{ marginRight: "8px" }}
+                  className="btn btn-secondary"
                 >
                   Edytuj
                 </button>
                 <button
                   onClick={() => onDelete(note.id)}
-                  style={{ backgroundColor: "#f8d7da" }}
+                  className="btn btn-danger"
                 >
                   Usuń
                 </button>

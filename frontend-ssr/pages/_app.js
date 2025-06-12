@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { initKeycloak } from '../utils/keycloak'
+import './styles.css';
 
 function MyApp({ Component, pageProps }) {
   const [keycloak, setKeycloak] = useState(null)

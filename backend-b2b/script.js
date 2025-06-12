@@ -72,12 +72,6 @@ app.get("/health", (req, res) => {
   res.send({ status: "ok" });
 });
 
-app.post("/run-now", async (req, res) => {
-  log("🔁 Manualne uruchomienie fetchAllNotes przez /run-now");
-  await fetchAllNotes();
-  res.send({ status: "started" });
-});
-
 app.listen(PORT, () => {
   log(`[INFO] Serwer uruchomiony na porcie ${PORT}`);
 });

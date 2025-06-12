@@ -94,10 +94,6 @@
         {
             "client": "notes-ssr",
             "roles": ["USER", "ADMIN"]
-        },
-        {
-            "client": "notes-backend",
-            "roles": ["ADMIN"]
         }
     ]
 }

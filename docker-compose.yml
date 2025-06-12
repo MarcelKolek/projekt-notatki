@@ -22,6 +22,7 @@ services:
       timeout: 2s
       retries: 12
       start_period: 30s 
+
   db:
     image: postgres:15
     environment:
@@ -33,7 +34,7 @@ services:
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - notes-network
-  
+
   backend:
     build:
       context: ./backend
@@ -55,13 +56,10 @@ services:
       context: ./frontend-spa
       dockerfile: Dockerfile
       args:
-        REACT_APP_KEYCLOAK_URL: "http://localhost:8080/auth"
+        REACT_APP_KEYCLOAK_URL: "http://localhost:8080/auth"  # Poprawione z localhost
         REACT_APP_REALM: "notes-realm"
         REACT_APP_CLIENT_ID: "notes-spa"
-        REACT_APP_API_URL: "http://backend:8000"
-    environment:
-      - HOST=0.0.0.0
-      - PORT=3000
+        REACT_APP_API_URL: "http://localhost:8000"  # Poprawione z localhost
     ports:
       - "3000:3000"
     depends_on:
@@ -69,6 +67,7 @@ services:
       - backend
     networks:
       - notes-network
+
 
   frontend-ssr:
     build:
@@ -88,7 +87,7 @@ services:
       - notes-network
 
   backend-b2b:
-    build:
+    build: 
       context: ./backend-b2b
       dockerfile: Dockerfile
     environment:

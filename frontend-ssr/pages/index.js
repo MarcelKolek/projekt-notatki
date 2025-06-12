@@ -4,16 +4,18 @@ import axios from 'axios';
 export default function Home({ keycloak }) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [roles, setRoles] = useState([]);
+  const [notesCount, setNotesCount] = useState(null);
 
   const fetchNotes = async () => {
     try {
       await keycloak.updateToken(30);
       const token = keycloak.token;
-      
+
       const response = await axios.get(`${process.env.API_URL}/notes`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       setNotes(response.data);
       setLoading(false);
     } catch (error) {
@@ -22,9 +24,30 @@ export default function Home({ keycloak }) {
     }
   };
 
+  const fetchNotesCount = async () => {
+    try {
+      await keycloak.updateToken(30);
+      const token = keycloak.token;
+
+      const response = await axios.get(`${process.env.API_URL}/notes/count`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setNotesCount(response.data.count);
+    } catch (error) {
+      console.error('Błąd pobierania liczby notatek:', error);
+    }
+  };
+
   useEffect(() => {
-    if (keycloak) {
+    if (keycloak?.tokenParsed) {
+      const userRoles = keycloak.tokenParsed.realm_access?.roles || [];
+      setRoles(userRoles);
+
       fetchNotes();
+      if (userRoles.includes('ADMIN')) {
+        fetchNotesCount();
+      }
     }
   }, [keycloak]);
 
@@ -33,28 +56,35 @@ export default function Home({ keycloak }) {
   };
 
   if (loading) {
-    return <div>Ładowanie notatek...</div>;
+    return <div className="loading">Ładowanie notatek…</div>;
   }
 
   return (
-    <div style={{ maxWidth: "800px", margin: "40px auto" }}>
-      <h1>Notatki: (SSR)</h1>
-      
-      <ul>
-        {notes.map(note => (
-          <li key={note.id} style={{ marginBottom: "20px", borderBottom: "1px solid #eee", paddingBottom: "10px" }}>
-            <h3>{note.title}</h3>
-            <p>{note.content}</p>
-          </li>
-        ))}
-      </ul>
+    <div className="container">
+      <h1 className="main-title">Notatki (SSR)</h1>
+
+      {roles.includes('ADMIN') && notesCount !== null && (
+        <div className="notes-count">
+          <strong>Liczba wszystkich notatek w systemie: {notesCount}</strong>
+        </div>
+      )}
 
       <button
-        style={{ marginTop: "20px"}}
+        className="btn btn-secondary logout-button"
         onClick={handleLogout}
       >
         Wyloguj
       </button>
+
+      <ul className="notes-list">
+        {notes.length === 0 && <div className="empty">Brak notatek</div>}
+        {[...notes].reverse().map((note) => (
+          <li key={note.id} className="note-item">
+            <h3 className="note-title">{note.title}</h3>
+            <p className="note-content">{note.content}</p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

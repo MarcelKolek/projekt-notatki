@@ -4,6 +4,7 @@ import Keycloak from "keycloak-js";
 import axios from "axios";
 import NotesList from "./components/NotesList";
 import { kcConfig } from "./kc-config";
+import "./styles.css";
 
 const keycloak = new Keycloak(kcConfig);
 
@@ -23,16 +24,10 @@ function App() {
       .then((auth) => {
         if (auth) {
           setAuthenticated(true);
-
           const tokenParsed = keycloak.tokenParsed;
           const userRoles =
-            tokenParsed &&
-            tokenParsed.realm_access &&
-            tokenParsed.realm_access.roles
-              ? tokenParsed.realm_access.roles
-              : [];
+            tokenParsed?.realm_access?.roles || [];
           setRoles(userRoles);
-
           fetchNotes();
           if (userRoles.includes("ADMIN")) {
             fetchNotesCount();
@@ -82,7 +77,7 @@ function App() {
           });
       })
       .catch((err) => {
-        console.error("Nie udało się odświeżyć tokena (count):", err);
+        console.error("Błąd odświeżania tokena (count):", err);
       });
   };
 
@@ -153,31 +148,34 @@ function App() {
   };
 
   if (!authenticated) {
-    return <div>Trwa logowanie...</div>;
+    return <div className="loading">Trwa logowanie…</div>;
   }
 
   return (
-    <div style={{ maxWidth: "800px", margin: "40px auto" }}>
-      <h1>Twoje Notatki</h1>
+    <div className="container">
+      <h1 className="main-title">Twoje Notatki</h1>
+
       {roles.includes("ADMIN") && notesCount !== null && (
-        <div style={{ marginBottom: "15px", color: "teal" }}>
+        <div className="notes-count">
           <strong>Liczba wszystkich notatek w systemie: {notesCount}</strong>
         </div>
       )}
-      <NotesList
-        notes={notes}
-        onCreate={createNote}
-        onDelete={deleteNote}
-        onUpdate={updateNote}
-      />
+
       <button
-        style={{ marginTop: "20px" }}
+        className="btn btn-secondary logout-button"
         onClick={() => {
           keycloak.logout({ redirectUri: window.location.origin });
         }}
       >
         Wyloguj
       </button>
+
+      <NotesList
+        notes={notes}
+        onCreate={createNote}
+        onDelete={deleteNote}
+        onUpdate={updateNote}
+      />
     </div>
   );
 }
